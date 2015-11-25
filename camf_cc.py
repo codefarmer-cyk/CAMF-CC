@@ -61,7 +61,7 @@ def MAE(testData,av,bu,bi,pu,qi,btcj,contextCondition):
         return mae/cnt
 
 	
-def CAMF_CC(configureFile,trainData,testData):
+def CAMF_CC(configureFile,trainData,validationData,testData):
         global userIdDict
         global itemIdDict
         global categoryIdDict
@@ -115,7 +115,7 @@ def CAMF_CC(configureFile,trainData,testData):
 				pu[uid][k] += learnRate * (eui * qi[iid][k] - regularization * pu[uid][k])
 				qi[iid][k] += learnRate * (eui * temp - regularization * qi[iid][k])
 		fi.close()
-		curMAE = MAE(testData,averageScore, bu, bi, pu, qi,btcj,contextCondition)
+		curMAE = MAE(validationData,averageScore, bu, bi, pu, qi,btcj,contextCondition)
 		print("test_MAE in step %d: %f" %(step, curMAE))
 		if curMAE >= preMAE:
 			break
@@ -123,28 +123,33 @@ def CAMF_CC(configureFile,trainData,testData):
 			preMAE = curMAE
 					
 	print("model generation over")
-        return curMAE
+	mae = MAE(testData,averageScore, bu, bi, pu, qi,btcj,contextCondition)
+        return mae 
 	
-def TenFloadValidate(data):
-        mae = 0.0
+def TenFlodCrossValidate(data):
+        sum_mae = 0.0
         random.shuffle(data)
         flodLen = len(data)/10
         flodData = list()
         for i in range(10):
             flodData.append(data[flodLen*i:flodLen*(i+1)])
 
-
         for i in range(10):
             print 'flod in step %d starting...' %(i+1)
             testData=flodData[i]
-            trainData=list()
+            
+            remainData=list()
             for j in range(i):
-                trainData.extend(flodData[j])
+                remainData.extend(flodData[j])
             for j in range(i+1,10):
-                trainData.extend(flodData[j])
-
-            mae += CAMF_CC(configureFile,trainData,testData)
-        return mae/10
+                remainData.extend(flodData[j])
+            validationData = remainData[:flodLen]
+            trainData = remainData[flodLen:]
+            
+            mae = CAMF_CC(configureFile,trainData,validationData,testData)
+            print 'flod in step %d mae is %f' %((i+1),mae)
+            sum_mae += mae
+        return sum_mae/10
 
 
 if __name__ == '__main__':
@@ -197,10 +202,10 @@ if __name__ == '__main__':
         fi.close()
 
         startTime = time.time() 
-        ans=TenFloadValidate(data)
+        ans=TenFlodCrossValidate(data)
         endTime = time.time()
         costTime = endTime-startTime
-        print 'final mae is ',ans
+        print 'final averge mae is ',ans
         print 'total use time is ',costTime
         print 'CAMF_CC finished!'
 
