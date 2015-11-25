@@ -61,7 +61,7 @@ def MAE(testData,av,bu,bi,pu,qi,btcj,contextCondition):
         return mae/cnt
 
 	
-def CAMF_CC(configureFile,trainData,validationData,testData):
+def CAMF_CC(trainData,validationData,testData):
         global userIdDict
         global itemIdDict
         global categoryIdDict
@@ -146,7 +146,7 @@ def TenFlodCrossValidate(data):
             validationData = remainData[:flodLen]
             trainData = remainData[flodLen:]
             
-            mae = CAMF_CC(configureFile,trainData,validationData,testData)
+            mae = CAMF_CC(trainData,validationData,testData)
             print 'flod in step %d mae is %f' %((i+1),mae)
             sum_mae += mae
         return sum_mae/10
